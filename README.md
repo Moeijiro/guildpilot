@@ -4,9 +4,19 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688.svg?logo=fastapi)](https://fastapi.tiangolo.com/)
 [![discord.py](https://img.shields.io/badge/Discord-discord.py%20v2.4-5865F2.svg?logo=discord)](https://discordpy.readthedocs.io/)
-[![Next.js](https://img.shields.io/badge/Frontend-Next.js%2014-black.svg?logo=next.js)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Frontend-Next.js%2016-black.svg?logo=next.js)](https://nextjs.org/)
 
 > **GuildPilot** is an advanced, stateful Discord onboarding and member journey platform. It guides new community members through interactive multi-step flows, gathers user preferences, automates role provisioning and channel unlocking, and provides server managers with a real-time web dashboard.
+
+![Flow builder with Discord preview](docs/screenshots/flow-builder.png)
+
+| Overview and drop-off funnel | Members and granted roles |
+| --- | --- |
+| ![Overview](docs/screenshots/overview.png) | ![Members](docs/screenshots/members.png) |
+| **Step editor** | **Landing page** |
+| ![Step editor](docs/screenshots/step-editor.png) | ![Landing](docs/screenshots/landing.png) |
+
+<p align="center"><img src="docs/screenshots/mobile-flow.png" width="260" alt="Flow builder on a phone" /></p>
 
 ---
 
@@ -82,8 +92,8 @@ flowchart TD
 
 ## Tech Stack
 
-- **Backend**: Python 3.11+, FastAPI, `discord.py 2.4`, SQLAlchemy 2.0 (Async), Pydantic v2, pytest
-- **Frontend**: Next.js 14 (App Router), React 18, TypeScript, Tailwind CSS, Lucide Icons
+- **Backend**: Python 3.12+, FastAPI, `discord.py 2.4`, SQLAlchemy 2.0 (Async), Pydantic v2, pytest
+- **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS 4, shadcn/ui (Radix), Lucide icons, Geist
 - **Database**: SQLite (Development) / PostgreSQL (Production ready)
 - **Deployment**: Docker, Docker Compose, GitHub Actions CI
 
