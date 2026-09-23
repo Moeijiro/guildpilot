@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_
 
 from app.db.session import get_db
-from app.db.models import GuildSettings, OnboardingFlow, OnboardingStep, MemberOnboarding, OnboardingLog
+from app.models import GuildSettings, OnboardingFlow, OnboardingStep, MemberOnboarding, OnboardingLog
 
 router = APIRouter()
 

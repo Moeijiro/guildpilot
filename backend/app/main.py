@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.v1.api import api_router
+from app.api.routes import demo, flows, guilds, members
 from app.db.session import engine, Base
 
 @asynccontextmanager
@@ -26,7 +26,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(api_router, prefix=settings.API_V1_STR)
+app.include_router(flows.router, prefix=f"{settings.API_V1_STR}/guilds", tags=["flows"])
+app.include_router(members.router, prefix=f"{settings.API_V1_STR}/guilds", tags=["members"])
+app.include_router(guilds.router, prefix=f"{settings.API_V1_STR}/guilds", tags=["guilds"])
+app.include_router(demo.router, prefix=f"{settings.API_V1_STR}/demo", tags=["demo"])
 
 @app.get("/health", tags=["system"])
 async def health_check():

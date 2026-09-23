@@ -5,7 +5,7 @@ from sqlalchemy import select, and_
 from typing import List
 
 from app.db.session import get_db
-from app.db.models import OnboardingFlow, OnboardingStep, GuildSettings
+from app.models import OnboardingFlow, OnboardingStep, GuildSettings
 from app.schemas.flow import (
     FlowOut, FlowCreate, StepCreate, StepUpdate, StepOut, FlowReorder, StepOption
 )

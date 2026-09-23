@@ -5,7 +5,7 @@ from sqlalchemy import select, and_
 from typing import List, Optional, Any
 
 from app.db.session import get_db
-from app.db.models import MemberOnboarding, OnboardingFlow, OnboardingStep
+from app.models import MemberOnboarding, OnboardingFlow, OnboardingStep
 from app.schemas.member import MemberProgressOut
 from app.services.engine import StepRejected, process_step_completion, reset_member_journey
 

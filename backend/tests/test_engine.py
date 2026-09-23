@@ -1,7 +1,7 @@
 import pytest
 import json
 from sqlalchemy import select
-from app.db.models import GuildSettings, OnboardingFlow, OnboardingStep, MemberOnboarding
+from app.models import GuildSettings, OnboardingFlow, OnboardingStep, MemberOnboarding
 from app.services.engine import (
     interpolate_template, get_or_create_member_onboarding,
     process_step_completion, reset_member_journey

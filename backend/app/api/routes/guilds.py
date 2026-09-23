@@ -5,7 +5,7 @@ from sqlalchemy import select
 from typing import List
 
 from app.db.session import get_db
-from app.db.models import GuildSettings, MemberOnboarding, OnboardingLog
+from app.models import GuildSettings, MemberOnboarding, OnboardingLog
 from app.schemas.guild import GuildSettingsOut, OverviewMetricsOut
 from app.schemas.member import OnboardingLogOut
 
