@@ -1,103 +1,81 @@
+"use client";
+
 import Link from "next/link";
-import { Compass, Users, ShieldCheck, ArrowRight, Sparkles, CheckCircle2, Lock, Sliders, Bell } from "lucide-react";
+import { ArrowRight, BarChart3, Eye, ListChecks, MousePointerClick, Route, ShieldCheck, Tags, UserPlus, Users } from "lucide-react";
+import { Logo } from "@/components/brand";
+import { DiscordPreview } from "@/components/discord-preview";
+import { CtaBand, FeatureCard, Hero, HeroButton, HeroCard, InfoCard, Section, SiteFooter, SiteNav } from "@/components/kit/site";
+import { Bar } from "@/components/kit/ui";
+import { Button } from "@/components/ui/button";
 
-export default function LandingPage() {
+const SAMPLE = {
+  id: 0, flow_id: 0, step_order: 2, step_type: "button_choice" as const, created_at: "",
+  title: "Choose your region", description: "Hey {{username}} — pick your region to unlock local channels and event alerts.",
+  options: [{ key: "eu", label: "Europe", emoji: "🇪🇺", role_name: "Europe" }, { key: "na", label: "North America", emoji: "🌎", role_name: "North America" }, { key: "apac", label: "Asia-Pacific", emoji: "🌏", role_name: "APAC" }],
+};
+
+function Preview() {
   return (
-    <div className="space-y-24 py-6">
-      {/* Hero Section */}
-      <section className="text-center space-y-6 max-w-3xl mx-auto pt-8">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#5865F2]/40 bg-[#5865F2]/10 text-[#5865F2] text-xs font-mono">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Interactive Discord Journey Automation • Zero Fragile Workflows</span>
+    <HeroCard>
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+        <DiscordPreview step={SAMPLE} total={5} serverName="Developer Nexus" username="alex" />
+        <div className="space-y-4">
+          <p className="text-sm font-semibold">Onboarding funnel</p>
+          <Bar label="1. Welcome" value={48} max={50} hint="48 of 50" />
+          <Bar label="2. Region" value={41} max={50} hint="41 of 50" />
+          <Bar label="3. Interests" value={37} max={50} hint="37 of 50" />
+          <Bar label="4. Rules" value={35} max={50} hint="35 of 50" tone="ok" />
         </div>
+      </div>
+    </HeroCard>
+  );
+}
 
-        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-tight">
-          Turn new Discord joins into <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#5865F2] via-indigo-400 to-cyan-400">
-            active community members.
-          </span>
-        </h1>
+export default function Landing() {
+  return (
+    <>
+      <SiteNav brand={<Logo />} links={[["#how", "How it works"], ["#features", "Features"], ["#use-cases", "Use cases"]]}
+        actions={<Button asChild size="sm"><Link href="/dashboard">Open the demo</Link></Button>} />
+      <main id="main">
+        <Hero eyebrow="Discord onboarding"
+          title="Turn new members into regulars in five clicks."
+          description="GuildPilot walks every new member through a short flow in Discord — welcome, region, interests, rules — and gives them the right roles from their answers. You see where people drop off."
+          actions={<><HeroButton href="/dashboard">Open the dashboard<ArrowRight data-icon="inline-end" /></HeroButton><HeroButton href="#how" variant="outline">How it works</HeroButton></>}
+          note="The demo server has a five-step flow and members at every stage."
+          visual={<Preview />} />
 
-        <p className="text-base text-zinc-300 max-w-2xl mx-auto leading-relaxed">
-          Guide newcomers through personalized onboarding flows, collect preferences with native Discord components, assign verified roles, and unlock channels seamlessly.
-        </p>
-
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-          <Link
-            href="/dashboard"
-            className="w-full sm:w-auto px-6 py-3 rounded-lg bg-[#5865F2] hover:bg-[#4752C4] text-white font-bold flex items-center justify-center gap-2 transition glow-discord"
-          >
-            Open Admin Dashboard
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-          <Link
-            href="/flow-builder"
-            className="w-full sm:w-auto px-6 py-3 rounded-lg border border-[#313338] bg-[#2B2D31] hover:bg-[#35373C] text-zinc-200 font-medium transition"
-          >
-            Live Flow Builder & Preview
-          </Link>
-        </div>
-      </section>
-
-      {/* Step Types Showcase */}
-      <section className="space-y-8">
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl font-bold text-white">Deterministic Onboarding Steps</h2>
-          <p className="text-xs text-zinc-400">Compact, battle-tested component primitives without fragile visual node trees.</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-5 rounded-2xl border border-[#313338] bg-[#2B2D31]/50 space-y-3">
-            <div className="w-9 h-9 rounded-lg bg-[#5865F2]/20 border border-[#5865F2]/30 flex items-center justify-center text-[#5865F2]">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <h3 className="font-semibold text-white text-sm">Dynamic Welcome Messages</h3>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Personalize embeds with variable interpolation: <code>&#123;&#123;username&#125;&#125;</code>, <code>&#123;&#123;server_name&#125;&#125;</code>, and <code>&#123;&#123;member_count&#125;&#125;</code>.
-            </p>
+        <Section id="how" eyebrow="How it works" title="A guided first five minutes">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <FeatureCard icon={UserPlus} title="Someone joins" index={1}>The bot greets them privately with the first step of your flow.</FeatureCard>
+            <FeatureCard icon={MousePointerClick} title="They answer" index={2} delay={0.05}>Buttons and menus: region, interests, a rules check — one step at a time.</FeatureCard>
+            <FeatureCard icon={Tags} title="Roles follow answers" index={3} delay={0.1}>Each option can grant a role, so the right channels open up.</FeatureCard>
+            <FeatureCard icon={ShieldCheck} title="Finished = verified" index={4} delay={0.15}>Completing the flow grants the member role for the rest of the server.</FeatureCard>
           </div>
+        </Section>
 
-          <div className="p-5 rounded-2xl border border-[#313338] bg-[#2B2D31]/50 space-y-3">
-            <div className="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-              <ShieldCheck className="w-4 h-4" />
-            </div>
-            <h3 className="font-semibold text-white text-sm">Automated Role Mapping</h3>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Map dropdown selections directly to Discord roles with automated permission verification and hierarchy safety checks.
-            </p>
+        <Section id="features" eyebrow="For server admins" title="Build it, preview it, measure it" tinted>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <FeatureCard icon={Route} title="Flow builder">Add, edit, reorder and delete steps; the order is kept gap-free.</FeatureCard>
+            <FeatureCard icon={Eye} title="Live Discord preview" delay={0.05}>See each step exactly as a member will, with their name filled in.</FeatureCard>
+            <FeatureCard icon={BarChart3} title="Drop-off funnel" delay={0.1}>How many members got past each step, and how long finishing takes.</FeatureCard>
+            <FeatureCard icon={Users} title="Member progress">Every member&apos;s step, answers and roles — reset anyone to start again.</FeatureCard>
+            <FeatureCard icon={ListChecks} title="One step at a time" delay={0.05}>Members can only answer the step they&apos;re on, with an option it offers.</FeatureCard>
+            <FeatureCard icon={ShieldCheck} title="Scoped to your server" delay={0.1}>Steps can&apos;t be edited through another server&apos;s address.</FeatureCard>
           </div>
+        </Section>
 
-          <div className="p-5 rounded-2xl border border-[#313338] bg-[#2B2D31]/50 space-y-3">
-            <div className="w-9 h-9 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
-              <Bell className="w-4 h-4" />
-            </div>
-            <h3 className="font-semibold text-white text-sm">Gentle Inactivity Reminders</h3>
-            <p className="text-xs text-zinc-400 leading-relaxed">
-              Non-intrusive reminder queue triggers DM follow-ups after 30m or 6h, capped at 2 reminders to respect members.
-            </p>
+        <Section id="use-cases" eyebrow="Use cases" title="For communities that grow every day" last>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <InfoCard title="Developer communities">Route people to the language and framework channels they care about.</InfoCard>
+            <InfoCard title="Game servers" delay={0.05}>Region and platform roles so players find matches in their timezone.</InfoCard>
+            <InfoCard title="Creator communities">Rules first, then perks — a clean start for every new subscriber.</InfoCard>
+            <InfoCard title="Course and cohort servers" delay={0.05}>Cohort and track roles that unlock the right study channels.</InfoCard>
           </div>
-        </div>
-      </section>
-
-      {/* State Machine Highlight */}
-      <section className="p-8 rounded-2xl border border-[#313338] bg-[#2B2D31]/30 flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="space-y-2 max-w-xl">
-          <div className="inline-flex items-center gap-1.5 text-xs text-[#5865F2] font-mono">
-            <Lock className="w-4 h-4" />
-            <span>Stateful Persistence Engine</span>
-          </div>
-          <h2 className="text-xl font-bold text-white">Survives Bot Restarts Seamlessly</h2>
-          <p className="text-xs text-zinc-300 leading-relaxed">
-            Every step progression and preference selection is stored synchronously in your database. If the bot restarts or encounters connectivity interruptions, members resume exactly where they left off.
-          </p>
-        </div>
-        <Link
-          href="/flow-builder"
-          className="px-6 py-3 rounded-lg bg-[#5865F2] hover:bg-[#4752C4] text-white text-xs font-bold transition shrink-0 shadow"
-        >
-          Explore Flow Builder
-        </Link>
-      </section>
-    </div>
+          <CtaBand title="Walk a member through the flow" description="Open the Members page and press Next step — watch the roles and the funnel update."
+            action={<Button asChild size="lg" variant="secondary" className="h-11 px-5"><Link href="/dashboard">Open the demo<ArrowRight data-icon="inline-end" /></Link></Button>} />
+        </Section>
+      </main>
+      <SiteFooter brand={<Logo />} right={<><ShieldCheck className="size-3.5" />Roles only from the options you define</>} />
+    </>
   );
 }

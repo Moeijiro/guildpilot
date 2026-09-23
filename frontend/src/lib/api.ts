@@ -1,4 +1,8 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+export const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1").replace(/\/$/, "");
+export const DEMO_GUILD = "demo-guild-777";
+export const DEMO_GUILD_NAME = "Developer Nexus";
+
+export type StepType = "welcome_message" | "button_choice" | "select_menu" | "rules_confirm" | "role_selection" | "checklist_item";
 
 export interface StepOption {
   key: string;
@@ -13,8 +17,8 @@ export interface OnboardingStep {
   id: number;
   flow_id: number;
   step_order: number;
-  step_type: string;
-  title: str;
+  step_type: StepType;
+  title: string;
   description: string;
   options: StepOption[];
   created_at: string;
@@ -39,7 +43,7 @@ export interface MemberProgress {
   current_step_index: number;
   total_steps: number;
   status: "not_started" | "in_progress" | "completed" | "expired";
-  selected_data: Record<string, any>;
+  selected_data: Record<string, unknown>;
   assigned_roles: string[];
   joined_at: string;
   completed_at: string | null;
@@ -69,89 +73,49 @@ export interface OnboardingLog {
   timestamp: string;
 }
 
+export type StepInput = { step_type: StepType; title: string; description: string; options: StepOption[] };
+
+export class ApiError extends Error {
+  constructor(message: string, public status: number) {
+    super(message);
+  }
+}
+
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}${path}`, { ...init, headers: init?.body ? { "Content-Type": "application/json" } : undefined });
+  } catch {
+    throw new ApiError("Can't reach the GuildPilot API. Is the backend running on port 8000?", 0);
+  }
+  if (!res.ok) {
+    let message = `Request failed (HTTP ${res.status}).`;
+    try {
+      const data = await res.json();
+      if (typeof data?.detail === "string") message = data.detail;
+      else if (Array.isArray(data?.detail) && data.detail[0]?.msg) message = String(data.detail[0].msg);
+    } catch {
+      /* not JSON */
+    }
+    throw new ApiError(message, res.status);
+  }
+  return res.json() as Promise<T>;
+}
+
+const send = (method: string, body?: unknown): RequestInit => ({ method, body: body === undefined ? undefined : JSON.stringify(body) });
+const g = (guild: string) => `/guilds/${guild}`;
+
 export const api = {
-  async getOverview(guildId: string = "demo-guild-777"): Promise<OverviewMetrics> {
-    const res = await fetch(`${API_URL}/guilds/${guildId}/overview`);
-    if (!res.ok) throw new Error("Failed to load guild overview.");
-    return res.json();
-  },
-
-  async getFlow(guildId: string = "demo-guild-777"): Promise<OnboardingFlow> {
-    const res = await fetch(`${API_URL}/guilds/${guildId}/flow`);
-    if (!res.ok) throw new Error("Failed to load onboarding flow.");
-    return res.json();
-  },
-
-  async addStep(guildId: string, step: Partial<OnboardingStep>): Promise<OnboardingStep> {
-    const res = await fetch(`${API_URL}/guilds/${guildId}/flow/steps`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(step),
-    });
-    if (!res.ok) throw new Error("Failed to add step.");
-    return res.json();
-  },
-
-  async updateStep(guildId: string, stepId: number, step: Partial<OnboardingStep>): Promise<OnboardingStep> {
-    const res = await fetch(`${API_URL}/guilds/${guildId}/flow/steps/${stepId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(step),
-    });
-    if (!res.ok) throw new Error("Failed to update step.");
-    return res.json();
-  },
-
-  async deleteStep(guildId: string, stepId: number): Promise<void> {
-    const res = await fetch(`${API_URL}/guilds/${guildId}/flow/steps/${stepId}`, {
-      method: "DELETE",
-    });
-    if (!res.ok) throw new Error("Failed to delete step.");
-  },
-
-  async reorderSteps(guildId: string, stepIdsOrder: number[]): Promise<void> {
-    const res = await fetch(`${API_URL}/guilds/${guildId}/flow/reorder`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ step_ids_order: stepIdsOrder }),
-    });
-    if (!res.ok) throw new Error("Failed to reorder steps.");
-  },
-
-  async getMembers(guildId: string = "demo-guild-777", status?: string): Promise<MemberProgress[]> {
-    const url = status
-      ? `${API_URL}/guilds/${guildId}/members?status=${status}`
-      : `${API_URL}/guilds/${guildId}/members`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("Failed to load members.");
-    return res.json();
-  },
-
-  async resetMember(guildId: string, userId: string): Promise<void> {
-    const res = await fetch(`${API_URL}/guilds/${guildId}/members/${userId}/reset`, {
-      method: "POST",
-    });
-    if (!res.ok) throw new Error("Failed to reset member journey.");
-  },
-
-  async advanceMember(guildId: string, userId: string, stepId: number, selection: any): Promise<any> {
-    const res = await fetch(`${API_URL}/guilds/${guildId}/members/${userId}/advance`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ step_id: stepId, user_selection: selection }),
-    });
-    if (!res.ok) throw new Error("Failed to advance step.");
-    return res.json();
-  },
-
-  async getLogs(guildId: string = "demo-guild-777"): Promise<OnboardingLog[]> {
-    const res = await fetch(`${API_URL}/guilds/${guildId}/logs`);
-    if (!res.ok) throw new Error("Failed to load logs.");
-    return res.json();
-  },
-
-  async seedDemo(): Promise<void> {
-    const res = await fetch(`${API_URL}/demo/seed`, { method: "POST" });
-    if (!res.ok) throw new Error("Failed to seed demo data.");
-  },
+  getOverview: (guild = DEMO_GUILD) => request<OverviewMetrics>(`${g(guild)}/overview`),
+  getFlow: (guild = DEMO_GUILD) => request<OnboardingFlow>(`${g(guild)}/flow`),
+  addStep: (step: StepInput, guild = DEMO_GUILD) => request<OnboardingStep>(`${g(guild)}/flow/steps`, send("POST", step)),
+  updateStep: (id: number, step: Partial<StepInput>, guild = DEMO_GUILD) => request<OnboardingStep>(`${g(guild)}/flow/steps/${id}`, send("PUT", step)),
+  deleteStep: (id: number, guild = DEMO_GUILD) => request<{ message: string }>(`${g(guild)}/flow/steps/${id}`, send("DELETE")),
+  reorderSteps: (ids: number[], guild = DEMO_GUILD) => request<{ message: string }>(`${g(guild)}/flow/reorder`, send("POST", { step_ids_order: ids })),
+  getMembers: (status?: string, guild = DEMO_GUILD) => request<MemberProgress[]>(`${g(guild)}/members${status ? `?status=${encodeURIComponent(status)}` : ""}`),
+  resetMember: (userId: string, guild = DEMO_GUILD) => request<{ status: string }>(`${g(guild)}/members/${userId}/reset`, send("POST")),
+  advanceMember: (userId: string, stepId: number, selection: string | string[], guild = DEMO_GUILD) =>
+    request<{ current_step_index: number; status: string; is_finished: boolean; assigned_roles: string[] }>(`${g(guild)}/members/${userId}/advance`, send("POST", { step_id: stepId, user_selection: selection })),
+  getLogs: (guild = DEMO_GUILD) => request<OnboardingLog[]>(`${g(guild)}/logs`),
+  seedDemo: () => request<{ message: string }>(`/demo/seed`, send("POST")),
 };
