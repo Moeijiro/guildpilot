@@ -33,13 +33,14 @@ async def seed_demo_data(db: AsyncSession = Depends(get_db)):
     res_f = await db.execute(stmt_f)
     flow = res_f.scalar_one_or_none()
     if not flow:
-        flow = OnboardingFlow(
-            guild_id=DEMO_GUILD_ID,
-            title="New Member Guided Journey",
-            description="Automated 5-step onboarding flow for developer community",
-            is_active=True
-        )
+        flow = OnboardingFlow(guild_id=DEMO_GUILD_ID, title="", is_active=True)
         db.add(flow)
+    # Opening the flow builder first auto-creates an empty default flow; the demo
+    # used to see "a flow exists" and skip its steps, leaving an empty demo.
+    has_steps = (await db.execute(select(OnboardingStep.id).where(OnboardingStep.flow_id == flow.id).limit(1))).first() if flow.id else None
+    if not has_steps:
+        flow.title = "New Member Guided Journey"
+        flow.description = "Five-step onboarding for a developer community"
         await db.commit()
         await db.refresh(flow)
 
@@ -90,7 +91,7 @@ async def seed_demo_data(db: AsyncSession = Depends(get_db)):
             )
         ]
 
-        for s_type, s_order, s_title, s_desc, s_opts in steps_data:
+        for s_type, s_order, s_title, s_desc, s_opts in steps_data:  # noqa: B007
             step = OnboardingStep(
                 flow_id=flow.id,
                 step_order=s_order,
@@ -128,6 +129,16 @@ async def seed_demo_data(db: AsyncSession = Depends(get_db)):
                 joined_at=joined_dt,
                 completed_at=completed_dt
             ))
+            # A believable history for the Activity feed.
+            events = [("onboarding_started", f"Member {uname} initialized onboarding journey.")] if status != "not_started" else []
+            events += [("step_completed", f"Completed Step {n}.") for n in range(1, c_step + 1)]
+            events += [("role_assigned", f"Assigned role '{r.removeprefix('role-')}'.") for r in roles]
+            if status == "completed":
+                events.append(("onboarding_finished", f"Onboarding journey completed successfully for {uname}."))
+            span = (completed_dt or now) - joined_dt
+            for i, (kind, details) in enumerate(events):
+                db.add(OnboardingLog(guild_id=DEMO_GUILD_ID, user_id=uid, event_type=kind, details=details,
+                                     timestamp=joined_dt + span * ((i + 1) / (len(events) + 1))))
 
     await db.commit()
     return {"message": "Demo data seeded successfully for demo-guild-777"}
