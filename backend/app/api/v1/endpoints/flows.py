@@ -12,6 +12,23 @@ from app.schemas.flow import (
 
 router = APIRouter()
 
+
+async def _guild_step(db: AsyncSession, guild_id: str, step_id: int) -> OnboardingStep:
+    """A step of this server's flow — steps of other servers are a 404, not editable by id."""
+    stmt = select(OnboardingStep).join(OnboardingFlow, OnboardingFlow.id == OnboardingStep.flow_id).where(
+        and_(OnboardingStep.id == step_id, OnboardingFlow.guild_id == guild_id)
+    )
+    step = (await db.execute(stmt)).scalar_one_or_none()
+    if not step:
+        raise HTTPException(status_code=404, detail="Step not found.")
+    return step
+
+
+async def _renumber(db: AsyncSession, flow_id: int) -> None:
+    steps = (await db.execute(select(OnboardingStep).where(OnboardingStep.flow_id == flow_id).order_by(OnboardingStep.step_order, OnboardingStep.id))).scalars().all()
+    for order, step in enumerate(steps, start=1):
+        step.step_order = order
+
 def serialize_step(step: OnboardingStep) -> StepOut:
     options = []
     if step.options_json:
@@ -95,17 +112,15 @@ async def add_flow_step(guild_id: str, payload: StepCreate, db: AsyncSession = D
         options_json=options_json
     )
     db.add(step)
+    await db.flush()
+    await _renumber(db, flow.id)
     await db.commit()
     await db.refresh(step)
     return serialize_step(step)
 
 @router.put("/{guild_id}/flow/steps/{step_id}", response_model=StepOut)
 async def update_flow_step(guild_id: str, step_id: int, payload: StepUpdate, db: AsyncSession = Depends(get_db)):
-    stmt = select(OnboardingStep).where(OnboardingStep.id == step_id)
-    res = await db.execute(stmt)
-    step = res.scalar_one_or_none()
-    if not step:
-        raise HTTPException(status_code=404, detail="Step not found.")
+    step = await _guild_step(db, guild_id, step_id)
 
     if payload.title is not None:
         step.title = payload.title
@@ -120,23 +135,26 @@ async def update_flow_step(guild_id: str, step_id: int, payload: StepUpdate, db:
 
 @router.delete("/{guild_id}/flow/steps/{step_id}", status_code=status.HTTP_200_OK)
 async def delete_flow_step(guild_id: str, step_id: int, db: AsyncSession = Depends(get_db)):
-    stmt = select(OnboardingStep).where(OnboardingStep.id == step_id)
-    res = await db.execute(stmt)
-    step = res.scalar_one_or_none()
-    if not step:
-        raise HTTPException(status_code=404, detail="Step not found.")
+    step = await _guild_step(db, guild_id, step_id)
 
+    flow_id = step.flow_id
     await db.delete(step)
+    await db.flush()
+    await _renumber(db, flow_id)  # no gaps: delete step 1 of 3 -> steps 1..2
     await db.commit()
     return {"message": "Step deleted successfully."}
 
 @router.post("/{guild_id}/flow/reorder")
 async def reorder_flow_steps(guild_id: str, payload: FlowReorder, db: AsyncSession = Depends(get_db)):
+    flow = (await db.execute(select(OnboardingFlow).where(
+        and_(OnboardingFlow.guild_id == guild_id, OnboardingFlow.is_active == True)  # noqa: E712
+    ))).scalar_one_or_none()
+    if not flow:
+        raise HTTPException(status_code=404, detail="Active onboarding flow not found.")
+    steps = {s.id: s for s in (await db.execute(select(OnboardingStep).where(OnboardingStep.flow_id == flow.id))).scalars()}
+    if sorted(payload.step_ids_order) != sorted(steps):
+        raise HTTPException(status_code=400, detail="The new order must list every step of this flow exactly once.")
     for new_order, s_id in enumerate(payload.step_ids_order, start=1):
-        stmt = select(OnboardingStep).where(OnboardingStep.id == s_id)
-        res = await db.execute(stmt)
-        step = res.scalar_one_or_none()
-        if step:
-            step.step_order = new_order
+        steps[s_id].step_order = new_order
     await db.commit()
     return {"message": "Steps reordered successfully."}

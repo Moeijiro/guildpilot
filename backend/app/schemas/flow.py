@@ -1,25 +1,25 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List, Any
+from typing import Literal, Optional, List, Any
 import datetime
 
 class StepOption(BaseModel):
-    key: str
-    label: str
+    key: str = Field(..., min_length=1, max_length=50)
+    label: str = Field(..., min_length=1, max_length=80)
     description: Optional[str] = None
     emoji: Optional[str] = None
     role_id: Optional[str] = None
     role_name: Optional[str] = None
 
 class StepCreate(BaseModel):
-    step_type: str = Field(..., description="welcome_message, button_choice, select_menu, rules_confirm, role_selection, checklist_item")
+    step_type: Literal["welcome_message", "button_choice", "select_menu", "rules_confirm", "role_selection", "checklist_item"]
     title: str = Field(..., min_length=2, max_length=255)
     description: str = Field(..., min_length=2)
     step_order: Optional[int] = None
     options: Optional[List[StepOption]] = None
 
 class StepUpdate(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
+    title: Optional[str] = Field(None, min_length=2, max_length=255)
+    description: Optional[str] = Field(None, min_length=2)
     options: Optional[List[StepOption]] = None
 
 class StepOut(BaseModel):
