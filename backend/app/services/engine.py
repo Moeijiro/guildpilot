@@ -7,6 +7,10 @@ from app.db.models import (
     GuildSettings, OnboardingFlow, OnboardingStep, MemberOnboarding, OnboardingLog, RoleMapping
 )
 
+class StepRejected(ValueError):
+    """The request is understood but not allowed in the member's current state (409)."""
+
+
 def interpolate_template(template: str, username: str, server_name: str, member_count: int = 1) -> str:
     """Safely interpolates standard onboarding template variables."""
     replacements = {
@@ -74,17 +78,28 @@ async def process_step_completion(
     if not member:
         raise ValueError("Member journey not found.")
 
-    # Retrieve step
-    stmt_s = select(OnboardingStep).where(OnboardingStep.id == step_id)
-    res_s = await db.execute(stmt_s)
-    step = res_s.scalar_one_or_none()
-    if not step:
-        raise ValueError("Step not found.")
+    if member.status == "completed":
+        raise StepRejected("This member has already finished onboarding.")
 
-    # Load flow steps to calculate total
-    stmt_steps = select(OnboardingStep).where(OnboardingStep.flow_id == step.flow_id).order_by(OnboardingStep.step_order)
-    res_steps = await db.execute(stmt_steps)
-    all_steps = res_steps.scalars().all()
+    # The member can only answer the step they are on, in this server's active flow.
+    stmt_flow = select(OnboardingFlow).where(and_(OnboardingFlow.guild_id == guild_id, OnboardingFlow.is_active == True))  # noqa: E712
+    flow = (await db.execute(stmt_flow)).scalar_one_or_none()
+    if not flow:
+        raise ValueError("Active onboarding flow not found.")
+    stmt_steps = select(OnboardingStep).where(OnboardingStep.flow_id == flow.id).order_by(OnboardingStep.step_order)
+    all_steps = (await db.execute(stmt_steps)).scalars().all()
+    step = next((s for s in all_steps if s.id == step_id), None)
+    if step is None:
+        raise ValueError("Step not found.")
+    if member.current_step_index >= len(all_steps) or all_steps[member.current_step_index].id != step.id:
+        raise StepRejected(f"This member is on step {member.current_step_index + 1}, not step {step.step_order}.")
+
+    options = json.loads(step.options_json) if step.options_json else []
+    if options:
+        valid = {o.get("key") for o in options}
+        chosen = user_selection if isinstance(user_selection, list) else [user_selection]
+        if not chosen or any(c not in valid for c in chosen):
+            raise StepRejected("Pick one of the options this step offers.")
 
     # Update selected data
     selected_data = json.loads(member.selected_data_json or "{}")
@@ -95,8 +110,7 @@ async def process_step_completion(
     newly_assigned_roles: List[str] = []
     assigned_roles = json.loads(member.assigned_role_ids_json or "[]")
 
-    if step.options_json:
-        options = json.loads(step.options_json)
+    if options:
         selection_list = user_selection if isinstance(user_selection, list) else [user_selection]
         
         for opt in options:
@@ -125,6 +139,7 @@ async def process_step_completion(
 
     is_finished = False
     if member.current_step_index >= len(all_steps):
+        member.current_step_index = len(all_steps)
         member.status = "completed"
         member.completed_at = datetime.datetime.utcnow()
         is_finished = True

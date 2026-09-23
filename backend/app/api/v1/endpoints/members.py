@@ -7,7 +7,7 @@ from typing import List, Optional, Any
 from app.db.session import get_db
 from app.db.models import MemberOnboarding, OnboardingFlow, OnboardingStep
 from app.schemas.member import MemberProgressOut
-from app.services.engine import reset_member_journey, process_step_completion
+from app.services.engine import StepRejected, process_step_completion, reset_member_journey
 
 router = APIRouter()
 
@@ -82,5 +82,7 @@ async def advance_member(
             "is_finished": is_finished,
             "assigned_roles": assigned
         }
+    except StepRejected as e:
+        raise HTTPException(status_code=409, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
