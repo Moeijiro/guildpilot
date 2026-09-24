@@ -1,5 +1,7 @@
 # GuildPilot
 
+**Portfolio case study:** [moeijiro.github.io/portfolio/projects/guildpilot](https://moeijiro.github.io/portfolio/projects/guildpilot/) · **Live demo:** not hosted — the app runs locally in a few commands (see below).
+
 **Turn new members into regulars in five clicks.** When someone joins your Discord
 server, GuildPilot walks them through a short flow in a private message: a welcome,
 their region, their interests, the rules. Each answer can grant a role, so the right
